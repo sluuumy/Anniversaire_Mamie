@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anniversaire Mamie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --paper:#FAF6EF; --ink:#2B2A28; --ink-soft:#6b6a66;
+    --sage:#3F6B4A; --sage-bg:#E7EFE7;
+    --clay:#B8654A; --clay-bg:#F6E7E2;
+    --gold:#9C7A2A; --gold-bg:#F3ECD8;
+    --line:#E4DFD3; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.45;padding-bottom:78px;}
+  h1,h2{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  h2{font-size:1.25rem;margin-bottom:10px;}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 16px 40px;}
+  header{position:sticky;top:0;background:var(--paper);padding:12px 0;border-bottom:1px solid var(--line);z-index:5;}
+  .event-title{font-family:'Fraunces',serif;font-size:1.15rem;text-align:center;color:var(--ink-soft);margin-bottom:2px;}
+  .credit{text-align:center;font-size:.72rem;color:var(--ink-soft);margin-bottom:6px;}
+  header h1{font-size:1.35rem;text-align:center;user-select:none;}
+  .topbar{display:flex;gap:8px;margin-top:12px;}
+  .topbar input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;background:var(--card);}
+  .topbar input:focus{outline:2px solid var(--sage);outline-offset:1px;}
+  #banner{margin-top:10px;}
+  .banner{padding:10px 13px;border-radius:10px;font-size:.83rem;}
+  .banner.demo{background:var(--gold-bg);color:var(--gold);}
+  .banner.error{background:var(--clay-bg);color:var(--clay);}
+  .admin-bar{margin-top:8px;font-size:.8rem;color:var(--ink-soft);text-align:center;}
+  .admin-bar a{color:var(--sage);cursor:pointer;text-decoration:underline;margin:0 4px;}
+  button,select,textarea,input{font-family:inherit;}
+  button{cursor:pointer;border:none;}
+  .day{margin-top:22px;}
+  .day-head{font-size:1.02rem;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--sage);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px;margin-bottom:10px;}
+  .card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+  .meal-name{font-weight:600;}
+  .badge{font-size:.75rem;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap;}
+  .badge.libre{background:var(--sage-bg);color:var(--sage);}
+  .badge.occupe{background:var(--clay-bg);color:var(--clay);}
+  .field-label{font-size:.73rem;color:var(--ink-soft);margin:6px 0 3px;}
+  input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.92rem;background:#FCFAF6;}
+  input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--sage);outline-offset:0;}
+  input:disabled,textarea:disabled{
+    background:repeating-linear-gradient(45deg,#E3DDCE,#E3DDCE 7px,#D8D1C0 7px,#D8D1C0 14px);
+    color:#84806f;font-style:italic;border:1px dashed #b8ae95;cursor:not-allowed;
+  }
+  .action-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap;}
+  .who{font-size:.86rem;color:var(--ink-soft);}
+  .who b{color:var(--ink);}
+  .btn-main{background:var(--sage);color:#fff;padding:9px 14px;border-radius:8px;font-size:.88rem;font-weight:500;}
+  .btn-outline{background:transparent;color:var(--clay);border:1px solid var(--clay);padding:8px 13px;border-radius:8px;font-size:.85rem;}
+  .btn-admin{background:transparent;color:var(--gold);border:1px solid var(--gold);padding:7px 11px;border-radius:8px;font-size:.8rem;}
+  .btn-main:disabled{background:#cfcac0;cursor:not-allowed;}
+  .btn-find{display:block;width:100%;margin-bottom:6px;background:var(--ink);color:#fff;padding:11px;border-radius:10px;font-size:.9rem;}
+  .highlight{outline:3px solid var(--gold);}
+  .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;max-width:85%;text-align:center;z-index:20;}
+  .toast.show{opacity:1;}
+  .info-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.92rem;}
+  .info-row:last-child{border-bottom:none;}
+  .info-row b{min-width:110px;}
+  .idea-cat{font-size:.72rem;font-weight:600;color:var(--gold);background:var(--gold-bg);padding:2px 8px;border-radius:6px;}
+  .del-link{color:var(--clay);cursor:pointer;text-decoration:underline;}
+  .btn-vote{background:var(--sage-bg);color:var(--sage);border-radius:8px;padding:7px 12px;font-size:.85rem;font-weight:600;}
+  .btn-vote.voted{background:var(--sage);color:#fff;}
+  .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom,0);}
+  .tabbar button{flex:1;background:none;padding:10px 2px 8px;font-size:.68rem;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .tabbar button .ic{font-size:1.15rem;}
+  .tabbar button.active{color:var(--sage);font-weight:600;}
+  .footer-tap{text-align:center;color:var(--line);font-size:.8rem;padding:18px 0 4px;user-select:none;}
+  .add-row{display:flex;gap:8px;margin-top:14px;}
+  .add-row input{flex:1;}
+  .add-row button{background:var(--sage);color:#fff;padding:0 16px;border-radius:8px;font-size:.85rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="event-title">Anniversaire Mamie</div>
+    <div class="credit">Créé par Nathan</div>
+    <h1 onclick="onTitleTap()">Planning de la semaine</h1>
+    <div class="topbar"><input id="nameInput" type="text" placeholder="Ton prénom"></div>
+    <div id="banner"></div>
+    <div id="adminBar" class="admin-bar" style="display:none">Mode organisateur actif <a onclick="exitAdmin()">quitter</a></div>
+  </header>
+  <div id="view"></div>
+  <div class="footer-tap">·</div>
+</div>
+<div id="tabbar" class="tabbar"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+// ==== Config Firebase (réutilise le projet existant "planning-mamie") ====
+const firebaseConfig = {
+  apiKey: "AIzaSyAaEd2FMx8chLU-hluzY1TxIYjtwOv4sJo",
+  authDomain: "planning-mamie.firebaseapp.com",
+  databaseURL: "https://planning-mamie-default-rtdb.firebaseio.com",
+  projectId: "planning-mamie",
+  storageBucket: "planning-mamie.firebasestorage.app",
+  messagingSenderId: "554709559544",
+  appId: "1:554709559544:web:63ba242a9fb439adad730d"
+};
+
+// ==== À personnaliser ====
+const MAMIE_AGE = 80;
+const CAGNOTTE_URL = ""; // colle ici le lien Leetchi si tu en crées une
+const ORGA_CODE = '1234'; // change-moi avant de partager le lien.
+
+const START_DATE = '2026-11-13', END_DATE = '2026-11-20';
+const REPAS_PER = [{id:'dejeuner',label:'Déjeuner'},{id:'diner',label:'Dîner'}];
+const JOURS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const MOIS_FR = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const TABS = [
+  {id:'accueil', ic:'🏠', label:'Accueil'},
+  {id:'repas', ic:'🍽️', label:'Repas'},
+  {id:'activites', ic:'🎯', label:'Activités'},
+  {id:'idees', ic:'💡', label:'Idées'},
+  {id:'objets', ic:'🧳', label:'Objets'}
+];
+
+let appState = {}, db = null, backendMode = 'firebase', currentTab = 'accueil', seeded = false;
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function localDateKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function buildDays(){
+  const days = []; let d = new Date(START_DATE+'T00:00:00'); const end = new Date(END_DATE+'T00:00:00');
+  while(d <= end){
+    days.push({ dateKey: localDateKey(d), label: `${JOURS_FR[d.getDay()]} ${d.getDate()} ${MOIS_FR[d.getMonth()]}` });
+    d.setDate(d.getDate()+1);
+  }
+  return days;
+}
+function esc(s){ const el=document.createElement('div'); el.textContent = s==null?'':s; return el.innerHTML; }
+function myName(){ return document.getElementById('nameInput').value.trim(); }
+function requireName(){ const n = myName(); if(!n){ toast('Indique ton prénom en haut d’abord.'); document.getElementById('nameInput').focus(); return null; } return n; }
+
+// ---- Path helpers (pour le mode local de secours) ----
+function getAt(obj, parts){ return parts.reduce((o,k)=> (o&&o[k]!==undefined)?o[k]:undefined, obj); }
+function setAt(obj, parts, val){ let o=obj; for(let i=0;i<parts.length-1;i++){ if(typeof o[parts[i]]!=='object'||o[parts[i]]===null) o[parts[i]]={}; o=o[parts[i]]; } o[parts[parts.length-1]]=val; }
+function delAt(obj, parts){ let o=obj; for(let i=0;i<parts.length-1;i++){ if(!o[parts[i]]) return; o=o[parts[i]]; } delete o[parts[parts.length-1]]; }
+
+function isPlaceholderConfig(){ return firebaseConfig.apiKey === 'VOTRE_API_KEY'; }
+
+function initStore(){
+  if(isPlaceholderConfig()){
+    backendMode='local'; showBanner('demo','Mode démo local : les données restent sur cet appareil (Firebase non configuré).');
+    loadLocal(); window.addEventListener('storage', e=>{ if(e.key==='ficheState') loadLocal(); });
+    return;
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    db.ref('app').on('value',
+      snap => { appState = snap.val() || {}; seedDefaults(); render(); },
+      err => { console.error(err); backendMode='local'; showBanner('error','Connexion Firebase impossible — repli en mode local sur cet appareil.'); loadLocal(); }
+    );
+  }catch(e){ console.error(e); backendMode='local'; showBanner('error','Configuration Firebase invalide — repli en mode local.'); loadLocal(); }
+}
+function loadLocal(){ const raw = localStorage.getItem('ficheState'); appState = raw?JSON.parse(raw):{}; seedDefaults(); render(); }
+function saveLocal(){ localStorage.setItem('ficheState', JSON.stringify(appState)); render(); }
+function showBanner(type,msg){ const b=document.getElementById('banner'); b.innerHTML = `<div class="banner ${type}">${msg}</div>`; }
+
+function seedDefaults(){
+  if(seeded || (appState.objets && Object.keys(appState.objets).length)) { seeded = true; return; }
+  seeded = true;
+  dbUpdate('objets', {
+    o1:{nom:'Jeux de société',responsables:{}}, o2:{nom:'Appareil à raclette',responsables:{}},
+    o3:{nom:'Enceinte / musique',responsables:{}}, o4:{nom:'Décoration anniversaire',responsables:{}},
+    o5:{nom:'Déguisements',responsables:{}}
+  });
+}
+
+function dbSet(path, value){
+  if(backendMode==='firebase' && db){
+    const ref = db.ref('app/'+path);
+    (value===null ? ref.remove() : ref.set(value)).catch(()=> toast('Erreur de synchro, réessaie.'));
+  } else {
+    const parts = path.split('/');
+    if(value===null) delAt(appState, parts); else setAt(appState, parts, value);
+    saveLocal();
+  }
+}
+function dbUpdate(path, patch){
+  if(backendMode==='firebase' && db){ db.ref('app/'+path).update(patch).catch(()=> toast('Erreur de synchro, réessaie.')); }
+  else { const parts=path.split('/'); const node=getAt(appState,parts)||{}; setAt(appState,parts,{...node,...patch}); saveLocal(); }
+}
+function dbPush(path, value){
+  if(backendMode==='firebase' && db){ db.ref('app/'+path).push(value).catch(()=> toast('Erreur de synchro, réessaie.')); }
+  else { const parts=path.split('/'); const node=getAt(appState,parts)||{}; const id='l'+Date.now()+Math.random().toString(36).slice(2,6); node[id]=value; setAt(appState,parts,node); saveLocal(); }
+}
+function toggleIn(path, name){
+  const node = getAt(appState, path.split('/')) || {};
+  dbSet(path+'/'+name, node[name] ? null : true);
+}
+
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
+
+// ---- Accès organisateur / secret discret ----
+let tapCount=0, tapTimer=null;
+function onTitleTap(){
+  tapCount++; clearTimeout(tapTimer); tapTimer=setTimeout(()=>tapCount=0,2500);
+  if(tapCount>=5){ tapCount=0; askOrgaCode(); }
+}
+function askOrgaCode(){
+  const code = prompt('Code organisateur :');
+  if(code===null) return;
+  if(code===ORGA_CODE){ localStorage.setItem('planningAdmin','1'); toast('Mode organisateur activé'); render(); }
+  else toast('Code incorrect');
+}
+function isAdmin(){ return localStorage.getItem('planningAdmin')==='1'; }
+function resetSection(key,label){
+  if(!confirm(`Réinitialiser ${label} pour tout le monde ? Action irréversible.`)) return;
+  if(key==='objets') seeded = false;
+  dbSet(key, null);
+  if(key==='objets' && backendMode!=='firebase') seedDefaults();
+  toast(label+' réinitialisé(e)s');
+}
+function resetAllData(){
+  if(!confirm('Tout réinitialiser (repas, activités, idées, objets, notes) ? Action irréversible.')) return;
+  seeded = false;
+  if(backendMode==='firebase' && db){ db.ref('app').remove().catch(()=> toast('Erreur, réessaie.')); }
+  else { appState = {}; saveLocal(); seedDefaults(); }
+  toast('Site réinitialisé');
+}
+// Accès pratique pendant les tests : ouvrir le site avec ?admin=CODE dans l'adresse.
+(function(){
+  const p = new URLSearchParams(window.location.search).get('admin');
+  if(p && p===ORGA_CODE) localStorage.setItem('planningAdmin','1');
+})();
+function exitAdmin(){ localStorage.removeItem('planningAdmin'); if(currentTab==='secret') currentTab='accueil'; render(); }
+document.querySelector('.footer-tap').addEventListener('click', onTitleTap);
+
+// ---- Navigation ----
+function setTab(id){ currentTab = id; render(); window.scrollTo({top:0}); }
+
+// ---- Rendu global ----
+function render(){
+  document.getElementById('adminBar').style.display = isAdmin() ? 'block' : 'none';
+  const tabs = isAdmin() ? [...TABS, {id:'secret',ic:'🎁',label:'Secret'}] : TABS;
+  document.getElementById('tabbar').innerHTML = tabs.map(t =>
+    `<button class="${currentTab===t.id?'active':''}" onclick="setTab('${t.id}')"><span class="ic">${t.ic}</span>${t.label}</button>`
+  ).join('');
+  const view = document.getElementById('view');
+  if(currentTab==='accueil') view.innerHTML = renderAccueil();
+  else if(currentTab==='repas') view.innerHTML = renderRepas();
+  else if(currentTab==='activites') view.innerHTML = renderActivites();
+  else if(currentTab==='idees') view.innerHTML = renderIdees();
+  else if(currentTab==='objets') view.innerHTML = renderObjets();
+  else if(currentTab==='secret') view.innerHTML = renderSecret();
+}
+
+// ---- Onglet Accueil ----
+function renderAccueil(){
+  return `
+    <h2>Bienvenue à l'anniversaire de Mamie !</h2>
+    <p>On se retrouve pour fêter ensemble les ${MAMIE_AGE} ans de Mamie, du vendredi 13 au vendredi 20 novembre. Voici comment fonctionne ce site.</p>
+    <div class="card">
+      <div class="info-row"><b>Ton prénom</b><span>Indique-le une fois en haut de l'écran : il sert partout (inscriptions, votes, objets).</span></div>
+      <div class="info-row"><b>🍽️ Repas</b><span>Chaque créneau midi/soir peut être pris par un binôme. Propose le menu et signale ce qu'il manque.</span></div>
+      <div class="info-row"><b>🎯 Activités</b><span>Propose une activité pour la semaine, et indique si tu y participes à celles des autres.</span></div>
+      <div class="info-row"><b>💡 Idées</b><span>Un espace pour proposer une idée (surprise, cadeau, chanson...) et voter pour tes préférées.</span></div>
+      <div class="info-row"><b>🧳 Objets</b><span>Une liste de ce qu'il faut apporter — coche ce que tu peux amener.</span></div>
+      <div class="info-row"><b>Synchro</b><span>Tout se met à jour en direct pour tout le monde, pas besoin de rafraîchir.</span></div>
+    </div>`;
+}
+
+// ---- Onglet Repas ----
+function firstFreeRepas(){
+  for(const day of buildDays()) for(const p of REPAS_PER){
+    const id = `${day.dateKey}_${p.id}`;
+    if(!Object.keys((appState.repas||{})[id]?.noms||{}).length) return id;
+  }
+  return null;
+}
+function jumpToFirstFree(){
+  const id = firstFreeRepas();
+  if(!id){ toast('Tous les repas sont pris, bravo !'); return; }
+  const el = document.getElementById('r-'+id);
+  if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('highlight'); setTimeout(()=>el.classList.remove('highlight'),1600); }
+}
+function renderRepas(){
+  const admin = isAdmin(), me = myName();
+  const days = buildDays().map(day => `
+    <div class="day"><div class="day-head"><b>${day.label}</b></div>
+    ${REPAS_PER.map(p => {
+      const id = `${day.dateKey}_${p.id}`;
+      const entry = (appState.repas||{})[id] || {};
+      const noms = entry.noms || {};
+      const names = Object.keys(noms);
+      const occupied = names.length>0;
+      const joined = me && !!noms[me];
+      const canEdit = !occupied || joined || admin;
+      let action;
+      if(joined) action = `<button class="btn-outline" onclick="toggleRepas('${id}')">Se retirer</button>`;
+      else if(!occupied || names.length<2) action = `<button class="btn-main" onclick="toggleRepas('${id}')">Rejoindre</button>`;
+      else action = admin ? `<button class="btn-admin" onclick="dbSet('repas/${id}/noms',null)">Vider (admin)</button>` : `<button class="btn-main" disabled>Complet</button>`;
+      return `
+      <div class="card" id="r-${id}">
+        <div class="card-top"><span class="meal-name">${p.label}</span><span class="badge ${occupied?'occupe':'libre'}">${occupied?'Occupé':'Libre'}</span></div>
+        <div class="field-label">Menu prévu</div>
+        <input type="text" value="${esc(entry.menu||'')}" placeholder="Ex : pâtes bolognaise" onchange="dbUpdate('repas/${id}',{menu:this.value})" ${canEdit?'':'disabled'}>
+        <div class="field-label">Commentaires / Courses</div>
+        <input type="text" value="${esc(entry.commentaires||'')}" placeholder="Ex : manque du parmesan" onchange="dbUpdate('repas/${id}',{commentaires:this.value})" ${canEdit?'':'disabled'}>
+        <div class="action-row"><span class="who">${occupied?`Équipe : <b>${esc(names.join(', '))}</b>`:'Personne pour l’instant'}</span>${action}</div>
+      </div>`;
+    }).join('')}
+    </div>`).join('');
+  return `<h2>Planning des repas</h2><p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Vendredi 13 au vendredi 20 novembre — midi et soir, par binôme.</p>
+    <button class="btn-find" onclick="jumpToFirstFree()">Trouver un créneau libre</button>${days}`;
+}
+function toggleRepas(id){ const n = requireName(); if(!n) return; toggleIn(`repas/${id}/noms`, n); }
+
+// ---- Onglet Activités ----
+function submitActivite(){
+  const n = requireName(); if(!n) return;
+  const moment = document.getElementById('actMoment').value.trim();
+  const txt = document.getElementById('actTxt').value.trim();
+  if(!txt){ toast('Décris ton activité avant d’envoyer.'); return; }
+  dbPush('activites', {nom:n, moment, texte:txt, participants:{}});
+  document.getElementById('actMoment').value = '';
+  document.getElementById('actTxt').value = '';
+}
+function toggleActivite(id){ const n = requireName(); if(!n) return; toggleIn(`activites/${id}/participants`, n); }
+function renderActivites(){
+  const admin = isAdmin(), me = myName();
+  const activites = appState.activites || {};
+  const list = Object.entries(activites).sort((a,b)=> Object.keys(b[1].participants||{}).length - Object.keys(a[1].participants||{}).length);
+  return `<h2>Activités de la semaine</h2>
+    <p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Propose autant d'activités que tu veux, et indique si tu participes à celles des autres.</p>
+    <div class="card">
+      <div class="field-label">Quand ? (optionnel)</div>
+      <input id="actMoment" type="text" placeholder="Ex : Samedi soir">
+      <div class="field-label">Activité proposée</div>
+      <textarea id="actTxt" rows="2" placeholder="Ex : Jeu de piste dans le village"></textarea>
+      <button class="btn-find" style="margin-top:10px" onclick="submitActivite()">Proposer</button>
+    </div>
+    ${list.length===0 ? '<p style="color:var(--ink-soft)">Aucune activité proposée pour l’instant — à toi de lancer le mouvement !</p>' : list.map(([id,a]) => {
+      const parts = a.participants||{}; const count = Object.keys(parts).length; const joined = me && !!parts[me];
+      return `<div class="card">
+        <div class="card-top">${a.moment?`<span class="idea-cat">${esc(a.moment)}</span>`:'<span></span>'}${(admin||a.nom===me)?`<button class="btn-admin" onclick="dbSet('activites/${id}',null)">Supprimer</button>`:''}</div>
+        <div>${esc(a.texte)}</div>
+        <div class="action-row">
+          <span class="who">Proposé par <b>${esc(a.nom)}</b>${count?` · ${count} participant${count>1?'s':''}`:''}</span>
+          <button class="${joined?'btn-outline':'btn-main'}" onclick="toggleActivite('${id}')">${joined?'Je ne viens plus':'Je participe'}</button>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ---- Onglet Idées ----
+function submitIdea(){
+  const n = requireName(); if(!n) return;
+  const cat = document.getElementById('ideaCat').value;
+  const txt = document.getElementById('ideaTxt').value.trim();
+  if(!txt){ toast('Écris ton idée avant d’envoyer.'); return; }
+  dbPush('idees', {nom:n, categorie:cat, texte:txt, votes:{}});
+  document.getElementById('ideaTxt').value = '';
+}
+function voteIdea(id){ const n = requireName(); if(!n) return; toggleIn(`idees/${id}/votes`, n); }
+function deleteIdea(id){ if(confirm('Supprimer cette idée ?')) dbSet('idees/'+id, null); }
+function renderIdees(){
+  const admin = isAdmin(), me = myName();
+  const idees = appState.idees || {};
+  const list = Object.entries(idees).sort((a,b)=> Object.keys(b[1].votes||{}).length - Object.keys(a[1].votes||{}).length);
+  return `<h2>Boîte à idées</h2>
+    <div class="card">
+      <div class="field-label">Catégorie</div>
+      <select id="ideaCat"><option>Activité</option><option>Cadeau</option><option>Surprise</option><option>Autre</option></select>
+      <div class="field-label">Ton idée</div>
+      <textarea id="ideaTxt" rows="2" placeholder="Ex : une playlist pour la soirée du samedi"></textarea>
+      <button class="btn-find" style="margin-top:10px" onclick="submitIdea()">Proposer</button>
+    </div>
+    ${list.length===0 ? '<p style="color:var(--ink-soft)">Aucune idée pour l’instant — sois le premier !</p>' : list.map(([id,idea]) => {
+      const votes = idea.votes||{}; const n = Object.keys(votes).length; const voted = me && !!votes[me];
+      return `<div class="card">
+        <div class="card-top"><span class="idea-cat">${esc(idea.categorie)}</span><button class="btn-vote ${voted?'voted':''}" onclick="voteIdea('${id}')">👍 ${n}</button></div>
+        <div>${esc(idea.texte)}</div>
+        <div class="who" style="margin-top:6px">Proposé par <b>${esc(idea.nom)}</b>${(admin||idea.nom===me)?` · <a class="del-link" onclick="deleteIdea('${id}')">supprimer</a>`:''}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ---- Onglet Objets ----
+function claimObjet(id){ const n = requireName(); if(!n) return; toggleIn(`objets/${id}/responsables`, n); }
+function addObjet(){
+  const nom = document.getElementById('newObjet').value.trim();
+  if(!nom){ toast('Écris le nom de l’objet.'); return; }
+  dbPush('objets', {nom, responsables:{}});
+  document.getElementById('newObjet').value = '';
+}
+function renderObjets(){
+  const admin = isAdmin(), me = myName();
+  const objets = appState.objets || {};
+  const list = Object.entries(objets);
+  return `<h2>Qui apporte quoi ?</h2>
+    <p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Clique sur "Je m'en charge" pour un objet — plusieurs personnes peuvent apporter le même. Tu peux aussi ajouter un objet manquant tout en bas.</p>
+    ${list.map(([id,o]) => {
+      const resp = o.responsables || {}; const names = Object.keys(resp); const taken = names.length>0; const mine = me && !!resp[me];
+      let action = mine
+        ? `<button class="btn-outline" onclick="claimObjet('${id}')">Laisser</button>`
+        : `<button class="btn-main" onclick="claimObjet('${id}')">Je m'en charge</button>`;
+      if(admin){
+        if(taken) action += ` <button class="btn-admin" onclick="dbSet('objets/${id}/responsables',null)">Vider</button>`;
+        action += ` <button class="btn-admin" onclick="if(confirm('Supprimer cet objet ?'))dbSet('objets/${id}',null)">Suppr.</button>`;
+      }
+      return `<div class="card"><div class="action-row" style="margin-top:0">
+        <span class="who"><b>${esc(o.nom)}</b>${taken?` — apporté par <b>${esc(names.join(', '))}</b>`:' — libre'}</span>${action}
+      </div></div>`;
+    }).join('')}
+    <div class="add-row"><input id="newObjet" type="text" placeholder="Ajouter un objet..."><button onclick="addObjet()">Ajouter</button></div>`;
+}
+
+// ---- Onglet Secret (organisateurs) ----
+function saveNotes(){ dbSet('secret/notes', document.getElementById('secretNotes').value); }
+function addGuestbook(){
+  const n = requireName(); if(!n) return;
+  const txt = document.getElementById('gbTxt').value.trim();
+  if(!txt) return;
+  dbPush('secret/guestbook', {nom:n, texte:txt});
+  document.getElementById('gbTxt').value = '';
+}
+function deleteGuestbook(id){ if(confirm('Supprimer ce message ?')) dbSet('secret/guestbook/'+id, null); }
+function renderSecret(){
+  const secret = appState.secret || {};
+  const gb = Object.entries(secret.guestbook || {});
+  return `<h2>Coin des organisateurs 🎁</h2>
+    <div class="card">
+      <div class="field-label">Cagnotte / discours / notes privées</div>
+      <textarea id="secretNotes" rows="5" onchange="saveNotes()" placeholder="Notes visibles seulement par les organisateurs...">${esc(secret.notes||'')}</textarea>
+      ${CAGNOTTE_URL ? `<p style="margin-top:8px"><a href="${esc(CAGNOTTE_URL)}" target="_blank">Voir la cagnotte</a></p>` : ''}
+    </div>
+    <h2 style="font-size:1.05rem;margin-top:20px">Livre d'or (souvenirs à préparer)</h2>
+    <div class="card">
+      <textarea id="gbTxt" rows="2" placeholder="Un mot ou souvenir pour Mamie..."></textarea>
+      <button class="btn-find" style="margin-top:10px" onclick="addGuestbook()">Ajouter</button>
+    </div>
+    ${gb.map(([id,m]) => `<div class="card"><div>${esc(m.texte)}</div><div class="who" style="margin-top:6px">— <b>${esc(m.nom)}</b> · <a class="del-link" onclick="deleteGuestbook('${id}')">supprimer</a></div></div>`).join('')}
+
+    <h2 style="font-size:1.05rem;margin-top:24px">Zone d'administration</h2>
+    <div class="card" style="border-color:var(--clay)">
+      <p style="color:var(--ink-soft);font-size:.85rem;margin-top:0">Ces actions effacent les données pour tout le monde, immédiatement. À utiliser pour tester ou repartir de zéro avant le vrai lancement.</p>
+      <div class="action-row"><span class="who">Repas</span><button class="btn-admin" onclick="resetSection('repas','les repas')">Réinitialiser</button></div>
+      <div class="action-row"><span class="who">Activités</span><button class="btn-admin" onclick="resetSection('activites','les activités')">Réinitialiser</button></div>
+      <div class="action-row"><span class="who">Idées</span><button class="btn-admin" onclick="resetSection('idees','les idées')">Réinitialiser</button></div>
+      <div class="action-row"><span class="who">Objets</span><button class="btn-admin" onclick="resetSection('objets','les objets')">Réinitialiser</button></div>
+      <div class="action-row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+        <span class="who"><b>Tout réinitialiser</b></span>
+        <button class="btn-outline" onclick="resetAllData()">Remise à zéro totale</button>
+      </div>
+    </div>`;
+}
+
+// ---- Init ----
+document.getElementById('nameInput').value = localStorage.getItem('planningNom') || '';
+document.getElementById('nameInput').addEventListener('change', e => { localStorage.setItem('planningNom', e.target.value.trim()); render(); });
+render();
+initStore();
+</script>
+</body>
+</html>
