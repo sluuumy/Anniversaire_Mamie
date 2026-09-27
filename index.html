@@ -300,7 +300,8 @@ function renderRepas(){
       let action;
       if(joined) action = `<button class="btn-outline" onclick="toggleRepas('${id}')">Se retirer</button>`;
       else if(!occupied || names.length<2) action = `<button class="btn-main" onclick="toggleRepas('${id}')">Rejoindre</button>`;
-      else action = admin ? `<button class="btn-admin" onclick="dbSet('repas/${id}/noms',null)">Vider (admin)</button>` : `<button class="btn-main" disabled>Complet</button>`;
+      else action = `<button class="btn-main" disabled>Complet</button>`;
+      if(admin && occupied) action += ` <button class="btn-admin" onclick="if(confirm('Vider ce créneau ?'))dbSet('repas/${id}/noms',null)">Vider</button>`;
       return `
       <div class="card" id="r-${id}">
         <div class="card-top"><span class="meal-name">${p.label}</span><span class="badge ${occupied?'occupe':'libre'}">${occupied?'Occupé':'Libre'}</span></div>
