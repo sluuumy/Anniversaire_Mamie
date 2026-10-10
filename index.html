@@ -44,6 +44,14 @@
   .badge{font-size:.75rem;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap;}
   .badge.libre{background:var(--sage-bg);color:var(--sage);}
   .badge.occupe{background:var(--clay-bg);color:var(--clay);}
+  .badge.indispo{background:var(--clay);color:#fff;}
+  .badge.mine{background:var(--sage);color:#fff;}
+  .card.taken{background:#F1EDE4;border-color:#d9cdb9;border-left:5px solid var(--clay);}
+  .card.taken .meal-name{color:var(--ink-soft);text-decoration:line-through;text-decoration-thickness:1px;}
+  .card.taken.mine{background:var(--sage-bg);border-color:#c5d8c8;border-left:5px solid var(--sage);}
+  .card.taken.mine .meal-name{color:var(--ink);text-decoration:none;}
+  .gps-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .gps-row a{text-decoration:none;display:inline-block;}
   .field-label{font-size:.73rem;color:var(--ink-soft);margin:6px 0 3px;}
   input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.92rem;background:#FCFAF6;}
   input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--sage);outline-offset:0;}
@@ -114,6 +122,14 @@ const ORGA_CODE = '1234'; // change-moi avant de partager le lien.
 
 const START_DATE = '2026-11-13', END_DATE = '2026-11-20';
 const REPAS_PER = [{id:'dejeuner',label:'Déjeuner'},{id:'diner',label:'Dîner'}];
+// Jour d'arrivée (vendredi 13) : dîner seulement. Jour de départ (vendredi 20) : aucun repas.
+function mealsForDay(dateKey){
+  if(dateKey===END_DATE) return [];
+  if(dateKey===START_DATE) return REPAS_PER.filter(p => p.id!=='dejeuner');
+  return REPAS_PER;
+}
+const GITE = { nom:'Gîte de la Salmonière', adresse:'6 rue St Éloi, 56560 Guiscriff' };
+const GITE_QUERY = encodeURIComponent(GITE.nom + ', ' + GITE.adresse);
 const JOURS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const MOIS_FR = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 const TABS = [
@@ -262,8 +278,17 @@ function renderAccueil(){
     <h2>Bienvenue à l'anniversaire de Mamie !</h2>
     <p>On se retrouve pour fêter ensemble les ${MAMIE_AGE} ans de Mamie, du vendredi 13 au vendredi 20 novembre. Voici comment fonctionne ce site.</p>
     <div class="card">
+      <div class="field-label" style="margin-top:0">Le gîte</div>
+      <div style="font-weight:600">${esc(GITE.nom)}</div>
+      <div style="color:var(--ink-soft);font-size:.92rem">${esc(GITE.adresse)}</div>
+      <div class="gps-row">
+        <a class="btn-main" href="https://www.google.com/maps/search/?api=1&query=${GITE_QUERY}" target="_blank" rel="noopener">Ouvrir dans Google Maps</a>
+        <a class="btn-outline" href="https://waze.com/ul?q=${GITE_QUERY}&navigate=yes" target="_blank" rel="noopener">Waze</a>
+      </div>
+    </div>
+    <div class="card">
       <div class="info-row"><b>Ton prénom</b><span>Indique-le une fois en haut de l'écran : il sert partout (inscriptions, votes, objets).</span></div>
-      <div class="info-row"><b>🍽️ Repas</b><span>Chaque créneau midi/soir peut être pris par un binôme. Propose le menu et signale ce qu'il manque.</span></div>
+      <div class="info-row"><b>🍽️ Repas</b><span>Chaque repas est pris par une seule personne : une fois réservé, il devient indisponible pour les autres. Propose le menu et signale ce qu'il manque. Le vendredi 13 (arrivée), seul le dîner est prévu, et il n'y a pas de repas le vendredi 20 (départ).</span></div>
       <div class="info-row"><b>🎯 Activités</b><span>Propose une activité pour la semaine, et indique si tu y participes à celles des autres.</span></div>
       <div class="info-row"><b>💡 Idées</b><span>Un espace pour proposer une idée (surprise, cadeau, chanson...) et voter pour tes préférées.</span></div>
       <div class="info-row"><b>🧳 Objets</b><span>Une liste de ce qu'il faut apporter — coche ce que tu peux amener.</span></div>
@@ -273,7 +298,7 @@ function renderAccueil(){
 
 // ---- Onglet Repas ----
 function firstFreeRepas(){
-  for(const day of buildDays()) for(const p of REPAS_PER){
+  for(const day of buildDays()) for(const p of mealsForDay(day.dateKey)){
     const id = `${day.dateKey}_${p.id}`;
     if(!Object.keys((appState.repas||{})[id]?.noms||{}).length) return id;
   }
@@ -287,9 +312,9 @@ function jumpToFirstFree(){
 }
 function renderRepas(){
   const admin = isAdmin(), me = myName();
-  const days = buildDays().map(day => `
+  const days = buildDays().filter(day => mealsForDay(day.dateKey).length > 0).map(day => `
     <div class="day"><div class="day-head"><b>${day.label}</b></div>
-    ${REPAS_PER.map(p => {
+    ${mealsForDay(day.dateKey).map(p => {
       const id = `${day.dateKey}_${p.id}`;
       const entry = (appState.repas||{})[id] || {};
       const noms = entry.noms || {};
@@ -298,25 +323,48 @@ function renderRepas(){
       const joined = me && !!noms[me];
       const canEdit = !occupied || joined || admin;
       let action;
-      if(joined) action = `<button class="btn-outline" onclick="toggleRepas('${id}')">Se retirer</button>`;
-      else if(!occupied || names.length<2) action = `<button class="btn-main" onclick="toggleRepas('${id}')">Rejoindre</button>`;
-      else action = `<button class="btn-main" disabled>Complet</button>`;
+      if(joined) action = `<button class="btn-outline" onclick="toggleRepas('${id}')">Me désister</button>`;
+      else if(!occupied) action = `<button class="btn-main" onclick="toggleRepas('${id}')">Je prends ce repas</button>`;
+      else action = `<button class="btn-main" disabled>Indisponible</button>`;
       if(admin && occupied) action += ` <button class="btn-admin" onclick="if(confirm('Vider ce créneau ?'))dbSet('repas/${id}/noms',null)">Vider</button>`;
+      const cls = joined ? 'taken mine' : (occupied ? 'taken' : '');
+      const badge = joined ? '<span class="badge mine">C’est toi</span>' : (occupied ? '<span class="badge indispo">Indisponible</span>' : '<span class="badge libre">Libre</span>');
       return `
-      <div class="card" id="r-${id}">
-        <div class="card-top"><span class="meal-name">${p.label}</span><span class="badge ${occupied?'occupe':'libre'}">${occupied?'Occupé':'Libre'}</span></div>
+      <div class="card ${cls}" id="r-${id}">
+        <div class="card-top"><span class="meal-name">${p.label}</span>${badge}</div>
         <div class="field-label">Menu prévu</div>
         <input type="text" value="${esc(entry.menu||'')}" placeholder="Ex : pâtes bolognaise" onchange="dbUpdate('repas/${id}',{menu:this.value})" ${canEdit?'':'disabled'}>
         <div class="field-label">Commentaires / Courses</div>
         <input type="text" value="${esc(entry.commentaires||'')}" placeholder="Ex : manque du parmesan" onchange="dbUpdate('repas/${id}',{commentaires:this.value})" ${canEdit?'':'disabled'}>
-        <div class="action-row"><span class="who">${occupied?`Équipe : <b>${esc(names.join(', '))}</b>`:'Personne pour l’instant'}</span>${action}</div>
+        <div class="action-row"><span class="who">${occupied?`Pris par <b>${esc(names.join(', '))}</b>`:'Personne pour l’instant'}</span>${action}</div>
       </div>`;
     }).join('')}
     </div>`).join('');
-  return `<h2>Planning des repas</h2><p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Vendredi 13 au vendredi 20 novembre — midi et soir, par binôme.</p>
+  return `<h2>Planning des repas</h2><p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Du vendredi 13 soir au jeudi 19 — une seule personne par repas. Pas de repas le jour du départ (vendredi 20).</p>
     <button class="btn-find" onclick="jumpToFirstFree()">Trouver un créneau libre</button>${days}`;
 }
-function toggleRepas(id){ const n = requireName(); if(!n) return; toggleIn(`repas/${id}/noms`, n); }
+// Un seul responsable par repas. En ligne, une transaction Firebase empêche que
+// deux personnes prennent le même créneau au même instant.
+function toggleRepas(id){
+  const n = requireName(); if(!n) return;
+  const taken = () => toast('Ce repas vient d’être pris par quelqu’un d’autre.');
+  if(backendMode==='firebase' && db){
+    db.ref(`app/repas/${id}/noms`).transaction(cur => {
+      cur = cur || {};
+      if(cur[n]) return null;                    // je me désiste
+      if(Object.keys(cur).length > 0) return;    // déjà pris : on annule
+      return { [n]: true };                      // je le prends
+    }, (err, committed) => {
+      if(err) toast('Erreur de synchro, réessaie.');
+      else if(!committed) taken();
+    });
+  } else {
+    const cur = ((appState.repas||{})[id]||{}).noms || {};
+    if(cur[n]) dbSet(`repas/${id}/noms`, null);
+    else if(Object.keys(cur).length > 0) taken();
+    else dbSet(`repas/${id}/noms`, { [n]: true });
+  }
+}
 
 // ---- Onglet Activités ----
 function submitActivite(){
