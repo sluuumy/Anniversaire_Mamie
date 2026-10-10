@@ -46,26 +46,20 @@
   .badge.occupe{background:var(--clay-bg);color:var(--clay);}
   .badge.indispo{background:var(--clay);color:#fff;}
   .badge.mine{background:var(--sage);color:#fff;}
-  .card.taken{background:#F1EDE4;border-color:#d9cdb9;border-left:5px solid var(--clay);}
-  .card.taken .meal-name{color:var(--ink-soft);text-decoration:line-through;text-decoration-thickness:1px;}
+  .card.taken{background:#ECE6DA;border-color:#D8D0C0;border-left:5px solid var(--clay);}
   .card.taken.mine{background:var(--sage-bg);border-color:#c5d8c8;border-left:5px solid var(--sage);}
-  .card.taken.mine .meal-name{color:var(--ink);text-decoration:none;}
   .gps-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
   .gps-row a{text-decoration:none;display:inline-block;}
   .field-label{font-size:.73rem;color:var(--ink-soft);margin:6px 0 3px;}
-  input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.92rem;background:#FCFAF6;}
+  input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.92rem;background:#FCFAF6;color:var(--ink);}
   input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--sage);outline-offset:0;}
-  input:disabled,textarea:disabled{
-    background:repeating-linear-gradient(45deg,#E3DDCE,#E3DDCE 7px,#D8D1C0 7px,#D8D1C0 14px);
-    color:#84806f;font-style:italic;border:1px dashed #b8ae95;cursor:not-allowed;
-  }
   .action-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap;}
   .who{font-size:.86rem;color:var(--ink-soft);}
   .who b{color:var(--ink);}
   .btn-main{background:var(--sage);color:#fff;padding:9px 14px;border-radius:8px;font-size:.88rem;font-weight:500;}
   .btn-outline{background:transparent;color:var(--clay);border:1px solid var(--clay);padding:8px 13px;border-radius:8px;font-size:.85rem;}
   .btn-admin{background:transparent;color:var(--gold);border:1px solid var(--gold);padding:7px 11px;border-radius:8px;font-size:.8rem;}
-  .btn-main:disabled{background:#cfcac0;cursor:not-allowed;}
+  .btn-main:disabled{background:#cfcac0;color:#6b6a66;cursor:not-allowed;}
   .btn-find{display:block;width:100%;margin-bottom:6px;background:var(--ink);color:#fff;padding:11px;border-radius:10px;font-size:.9rem;}
   .highlight{outline:3px solid var(--gold);}
   .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:20px;font-size:.85rem;opacity:0;transition:opacity .25s;pointer-events:none;max-width:85%;text-align:center;z-index:20;}
@@ -104,7 +98,7 @@
 <div id="toast" class="toast"></div>
 
 <script>
-// ==== Config Firebase (réutilise le projet existant "planning-mamie") ====
+// ==== Config Firebase ====
 const firebaseConfig = {
   apiKey: "AIzaSyAaEd2FMx8chLU-hluzY1TxIYjtwOv4sJo",
   authDomain: "planning-mamie.firebaseapp.com",
@@ -117,12 +111,11 @@ const firebaseConfig = {
 
 // ==== À personnaliser ====
 const MAMIE_AGE = 80;
-const CAGNOTTE_URL = ""; // colle ici le lien Leetchi si tu en crées une
-const ORGA_CODE = '1234'; // change-moi avant de partager le lien.
+const CAGNOTTE_URL = ""; 
+const ORGA_CODE = '1234';
 
 const START_DATE = '2026-11-13', END_DATE = '2026-11-20';
 const REPAS_PER = [{id:'dejeuner',label:'Déjeuner'},{id:'diner',label:'Dîner'}];
-// Jour d'arrivée (vendredi 13) : dîner seulement. Jour de départ (vendredi 20) : aucun repas.
 function mealsForDay(dateKey){
   if(dateKey===END_DATE) return [];
   if(dateKey===START_DATE) return REPAS_PER.filter(p => p.id!=='dejeuner');
@@ -156,7 +149,6 @@ function esc(s){ const el=document.createElement('div'); el.textContent = s==nul
 function myName(){ return document.getElementById('nameInput').value.trim(); }
 function requireName(){ const n = myName(); if(!n){ toast('Indique ton prénom en haut d’abord.'); document.getElementById('nameInput').focus(); return null; } return n; }
 
-// ---- Path helpers (pour le mode local de secours) ----
 function getAt(obj, parts){ return parts.reduce((o,k)=> (o&&o[k]!==undefined)?o[k]:undefined, obj); }
 function setAt(obj, parts, val){ let o=obj; for(let i=0;i<parts.length-1;i++){ if(typeof o[parts[i]]!=='object'||o[parts[i]]===null) o[parts[i]]={}; o=o[parts[i]]; } o[parts[parts.length-1]]=val; }
 function delAt(obj, parts){ let o=obj; for(let i=0;i<parts.length-1;i++){ if(!o[parts[i]]) return; o=o[parts[i]]; } delete o[parts[parts.length-1]]; }
@@ -218,7 +210,6 @@ function toggleIn(path, name){
 let toastTimer;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600); }
 
-// ---- Accès organisateur / secret discret ----
 let tapCount=0, tapTimer=null;
 function onTitleTap(){
   tapCount++; clearTimeout(tapTimer); tapTimer=setTimeout(()=>tapCount=0,2500);
@@ -245,7 +236,6 @@ function resetAllData(){
   else { appState = {}; saveLocal(); seedDefaults(); }
   toast('Site réinitialisé');
 }
-// Accès pratique pendant les tests : ouvrir le site avec ?admin=CODE dans l'adresse.
 (function(){
   const p = new URLSearchParams(window.location.search).get('admin');
   if(p && p===ORGA_CODE) localStorage.setItem('planningAdmin','1');
@@ -253,10 +243,8 @@ function resetAllData(){
 function exitAdmin(){ localStorage.removeItem('planningAdmin'); if(currentTab==='secret') currentTab='accueil'; render(); }
 document.querySelector('.footer-tap').addEventListener('click', onTitleTap);
 
-// ---- Navigation ----
 function setTab(id){ currentTab = id; render(); window.scrollTo({top:0}); }
 
-// ---- Rendu global ----
 function render(){
   document.getElementById('adminBar').style.display = isAdmin() ? 'block' : 'none';
   const tabs = isAdmin() ? [...TABS, {id:'secret',ic:'🎁',label:'Secret'}] : TABS;
@@ -272,7 +260,6 @@ function render(){
   else if(currentTab==='secret') view.innerHTML = renderSecret();
 }
 
-// ---- Onglet Accueil ----
 function renderAccueil(){
   return `
     <h2>Bienvenue à l'anniversaire de Mamie !</h2>
@@ -296,7 +283,6 @@ function renderAccueil(){
     </div>`;
 }
 
-// ---- Onglet Repas ----
 function firstFreeRepas(){
   for(const day of buildDays()) for(const p of mealsForDay(day.dateKey)){
     const id = `${day.dateKey}_${p.id}`;
@@ -321,7 +307,7 @@ function renderRepas(){
       const names = Object.keys(noms);
       const occupied = names.length>0;
       const joined = me && !!noms[me];
-      const canEdit = !occupied || joined || admin;
+      const canEdit = joined || admin;
       let action;
       if(joined) action = `<button class="btn-outline" onclick="toggleRepas('${id}')">Me désister</button>`;
       else if(!occupied) action = `<button class="btn-main" onclick="toggleRepas('${id}')">Je prends ce repas</button>`;
@@ -333,9 +319,9 @@ function renderRepas(){
       <div class="card ${cls}" id="r-${id}">
         <div class="card-top"><span class="meal-name">${p.label}</span>${badge}</div>
         <div class="field-label">Menu prévu</div>
-        <input type="text" value="${esc(entry.menu||'')}" placeholder="Ex : pâtes bolognaise" onchange="dbUpdate('repas/${id}',{menu:this.value})" ${canEdit?'':'disabled'}>
+        <input type="text" value="${esc(entry.menu||'')}" placeholder="Ex : pâtes bolognaise" onchange="dbUpdate('repas/${id}',{menu:this.value})" ${canEdit?'':'readonly'}>
         <div class="field-label">Commentaires / Courses</div>
-        <input type="text" value="${esc(entry.commentaires||'')}" placeholder="Ex : manque du parmesan" onchange="dbUpdate('repas/${id}',{commentaires:this.value})" ${canEdit?'':'disabled'}>
+        <input type="text" value="${esc(entry.commentaires||'')}" placeholder="Ex : manque du parmesan" onchange="dbUpdate('repas/${id}',{commentaires:this.value})" ${canEdit?'':'readonly'}>
         <div class="action-row"><span class="who">${occupied?`Pris par <b>${esc(names.join(', '))}</b>`:'Personne pour l’instant'}</span>${action}</div>
       </div>`;
     }).join('')}
@@ -343,17 +329,16 @@ function renderRepas(){
   return `<h2>Planning des repas</h2><p style="color:var(--ink-soft);font-size:.88rem;margin-top:-6px">Du vendredi 13 soir au jeudi 19 — une seule personne par repas. Pas de repas le jour du départ (vendredi 20).</p>
     <button class="btn-find" onclick="jumpToFirstFree()">Trouver un créneau libre</button>${days}`;
 }
-// Un seul responsable par repas. En ligne, une transaction Firebase empêche que
-// deux personnes prennent le même créneau au même instant.
+
 function toggleRepas(id){
   const n = requireName(); if(!n) return;
   const taken = () => toast('Ce repas vient d’être pris par quelqu’un d’autre.');
   if(backendMode==='firebase' && db){
     db.ref(`app/repas/${id}/noms`).transaction(cur => {
       cur = cur || {};
-      if(cur[n]) return null;                    // je me désiste
-      if(Object.keys(cur).length > 0) return;    // déjà pris : on annule
-      return { [n]: true };                      // je le prends
+      if(cur[n]) return null;                      
+      if(Object.keys(cur).length > 0) return;    
+      return { [n]: true };                      
     }, (err, committed) => {
       if(err) toast('Erreur de synchro, réessaie.');
       else if(!committed) taken();
@@ -366,7 +351,6 @@ function toggleRepas(id){
   }
 }
 
-// ---- Onglet Activités ----
 function submitActivite(){
   const n = requireName(); if(!n) return;
   const moment = document.getElementById('actMoment').value.trim();
@@ -391,19 +375,21 @@ function renderActivites(){
       <button class="btn-find" style="margin-top:10px" onclick="submitActivite()">Proposer</button>
     </div>
     ${list.length===0 ? '<p style="color:var(--ink-soft)">Aucune activité proposée pour l’instant — à toi de lancer le mouvement !</p>' : list.map(([id,a]) => {
-      const parts = a.participants||{}; const count = Object.keys(parts).length; const joined = me && !!parts[me];
+      const parts = a.participants||{}; const names = Object.keys(parts); const count = names.length; const joined = me && !!parts[me];
       return `<div class="card">
         <div class="card-top">${a.moment?`<span class="idea-cat">${esc(a.moment)}</span>`:'<span></span>'}${(admin||a.nom===me)?`<button class="btn-admin" onclick="dbSet('activites/${id}',null)">Supprimer</button>`:''}</div>
         <div>${esc(a.texte)}</div>
+        <div style="margin-top:8px;font-size:.85rem;color:var(--ink-soft);">
+          <b>Participants (${count}) :</b>${count > 0 ? esc(names.join(', ')) : 'Personne pour l’instant'}
+        </div>
         <div class="action-row">
-          <span class="who">Proposé par <b>${esc(a.nom)}</b>${count?` · ${count} participant${count>1?'s':''}`:''}</span>
+          <span class="who">Proposé par <b>${esc(a.nom)}</b></span>
           <button class="${joined?'btn-outline':'btn-main'}" onclick="toggleActivite('${id}')">${joined?'Je ne viens plus':'Je participe'}</button>
         </div>
       </div>`;
     }).join('')}`;
 }
 
-// ---- Onglet Idées ----
 function submitIdea(){
   const n = requireName(); if(!n) return;
   const cat = document.getElementById('ideaCat').value;
@@ -436,7 +422,6 @@ function renderIdees(){
     }).join('')}`;
 }
 
-// ---- Onglet Objets ----
 function claimObjet(id){ const n = requireName(); if(!n) return; toggleIn(`objets/${id}/responsables`, n); }
 function addObjet(){
   const nom = document.getElementById('newObjet').value.trim();
@@ -466,7 +451,6 @@ function renderObjets(){
     <div class="add-row"><input id="newObjet" type="text" placeholder="Ajouter un objet..."><button onclick="addObjet()">Ajouter</button></div>`;
 }
 
-// ---- Onglet Secret (organisateurs) ----
 function saveNotes(){ dbSet('secret/notes', document.getElementById('secretNotes').value); }
 function addGuestbook(){
   const n = requireName(); if(!n) return;
@@ -485,7 +469,7 @@ function renderSecret(){
       <textarea id="secretNotes" rows="5" onchange="saveNotes()" placeholder="Notes visibles seulement par les organisateurs...">${esc(secret.notes||'')}</textarea>
       ${CAGNOTTE_URL ? `<p style="margin-top:8px"><a href="${esc(CAGNOTTE_URL)}" target="_blank">Voir la cagnotte</a></p>` : ''}
     </div>
-    <h2 style="font-size:1.05rem;margin-top:20px">Livre d'or (souvenirs à préparer)</h2>
+    <h2 style="font-size:1.05rem;margin-top:20px">Livre d'or (souvenirs à fêter)</h2>
     <div class="card">
       <textarea id="gbTxt" rows="2" placeholder="Un mot ou souvenir pour Mamie..."></textarea>
       <button class="btn-find" style="margin-top:10px" onclick="addGuestbook()">Ajouter</button>
@@ -506,7 +490,6 @@ function renderSecret(){
     </div>`;
 }
 
-// ---- Init ----
 document.getElementById('nameInput').value = localStorage.getItem('planningNom') || '';
 document.getElementById('nameInput').addEventListener('change', e => { localStorage.setItem('planningNom', e.target.value.trim()); render(); });
 render();
